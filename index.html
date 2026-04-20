@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanzApp Pro - Panel de Administración</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --header-height: 60px;
+            --primary: #0d47a1;
+            --primary-dark: #002171;
+            --accent: #1565c0;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            top: 0; left: 0;
+            background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: white;
+            z-index: 1050;
+            transition: transform 0.3s;
+            overflow-y: auto;
+        }
+        .sidebar-brand {
+            padding: 18px 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .sidebar-brand i { font-size: 1.5rem; }
+        .sidebar-nav { padding: 10px 0; }
+        .sidebar-section {
+            padding: 8px 20px 4px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 8px;
+        }
+        .sidebar-link {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 20px;
+            color: rgba(255,255,255,0.75);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .sidebar-link:hover { background: rgba(255,255,255,0.08); color: white; }
+        .sidebar-link.active {
+            background: rgba(255,255,255,0.12);
+            color: white;
+            border-left-color: #42a5f5;
+            font-weight: 600;
+        }
+        .sidebar-link i { font-size: 1.1rem; width: 22px; text-align: center; }
+        .sidebar-link .badge { font-size: 0.65rem; }
+
+        /* MAIN */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s;
+        }
+
+        /* TOP NAV */
+        .top-nav {
+            height: var(--header-height);
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            position: sticky; top: 0; z-index: 1040;
+        }
+        .top-nav .page-title { font-weight: 700; font-size: 1.15rem; color: #333; }
+
+        /* PAGES */
+        .page { display: none; padding: 24px; }
+        .page.active { display: block; }
+
+        /* STAT CARDS */
+        .stat-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-card .card-body { padding: 20px; }
+        .stat-card .stat-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+        }
+        .stat-card .stat-value { font-size: 1.5rem; font-weight: 700; }
+        .stat-card .stat-label { font-size: 0.8rem; color: #6c757d; }
+
+        /* TABLES */
+        .table-card { border: none; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .table-card .card-header {
+            background: white;
+            border-bottom: 1px solid #eee;
+            padding: 16px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-radius: 12px 12px 0 0;
+        }
+        .table-card .card-header h6 { margin: 0; font-weight: 700; }
+        .table > :not(caption) > * > * { padding: 10px 16px; vertical-align: middle; }
+        .table thead th {
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+        }
+        .table tbody td { font-size: 0.9rem; }
+
+        /* CHART CARD */
+        .chart-card { border: none; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .chart-card .card-body { padding: 20px; }
+        .chart-container { position: relative; height: 300px; }
+
+        /* CATEGORY TAG */
+        .cat-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 500;
+        }
+        .cat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+        /* RESPONSIVE */
+        .sidebar-toggle { display: none; }
+        @media (max-width: 991px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.show { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .sidebar-toggle { display: block; }
+            .sidebar-overlay {
+                display: none; position: fixed; inset: 0;
+                background: rgba(0,0,0,0.5); z-index: 1045;
+            }
+            .sidebar-overlay.show { display: block; }
+        }
+
+        /* FILTERS BAR */
+        .filters-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        /* DARK MODE */
+        [data-bs-theme="dark"] { --bs-body-bg: #1a1a2e; }
+        [data-bs-theme="dark"] .sidebar { background: linear-gradient(180deg, #0a0a1a 0%, #16213e 100%); }
+        [data-bs-theme="dark"] .top-nav { background: #16213e; border-color: #2a2a4a; }
+        [data-bs-theme="dark"] .stat-card, [data-bs-theme="dark"] .table-card,
+        [data-bs-theme="dark"] .chart-card, [data-bs-theme="dark"] .filters-bar { background: #16213e; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        [data-bs-theme="dark"] .table thead th { background: #1a1a2e; color: #adb5bd; }
+        [data-bs-theme="dark"] .table-card .card-header { background: #16213e; border-color: #2a2a4a; }
+
+        .currency { font-variant-numeric: tabular-nums; font-weight: 600; }
+        .text-income { color: #2e7d32; }
+        .text-expense { color: #c62828; }
+        .empty-state { padding: 50px 20px; text-align: center; color: #adb5bd; }
+        .empty-state i { font-size: 3rem; margin-bottom: 10px; display: block; }
+
+        /* Color picker grid */
+        .color-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+        .color-swatch {
+            width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
+            border: 2px solid transparent; transition: all 0.15s;
+        }
+        .color-swatch:hover, .color-swatch.active { border-color: #333; transform: scale(1.15); }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar" class="sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-wallet2"></i> FinanzApp Pro
+    </div>
+    <div class="sidebar-nav">
+        <div class="sidebar-section">Principal</div>
+        <a class="sidebar-link active" onclick="navigateTo('dashboard')"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+
+        <div class="sidebar-section">Transacciones</div>
+        <a class="sidebar-link" onclick="navigateTo('ingresos')"><i class="bi bi-arrow-down-circle"></i> Ingresos <span class="badge bg-success ms-auto" id="badge-ingresos">0</span></a>
+        <a class="sidebar-link" onclick="navigateTo('egresos')"><i class="bi bi-arrow-up-circle"></i> Egresos <span class="badge bg-danger ms-auto" id="badge-egresos">0</span></a>
+
+        <div class="sidebar-section">Análisis</div>
+        <a class="sidebar-link" onclick="navigateTo('resumen')"><i class="bi bi-calendar3"></i> Resumen Mensual</a>
+        <a class="sidebar-link" onclick="navigateTo('categorias')"><i class="bi bi-pie-chart"></i> Por Categorías</a>
+        <a class="sidebar-link" onclick="navigateTo('presupuesto')"><i class="bi bi-bullseye"></i> Presupuesto</a>
+
+        <div class="sidebar-section">Planificación</div>
+        <a class="sidebar-link" onclick="navigateTo('metas')"><i class="bi bi-trophy"></i> Metas</a>
+        <a class="sidebar-link" onclick="navigateTo('deudas')"><i class="bi bi-credit-card"></i> Deudas</a>
+
+        <div class="sidebar-section">Configuración</div>
+        <a class="sidebar-link" onclick="navigateTo('config-categorias')"><i class="bi bi-tags"></i> Gestión Categorías</a>
+        <a class="sidebar-link" onclick="navigateTo('config-metodos')"><i class="bi bi-credit-card-2-front"></i> Métodos de Pago</a>
+        <a class="sidebar-link" onclick="navigateTo('ajustes')"><i class="bi bi-gear"></i> Ajustes</a>
+    </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main-content">
+    <!-- TOP NAV -->
+    <div class="top-nav">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-sm btn-outline-secondary sidebar-toggle" onclick="toggleSidebar()"><i class="bi bi-list fs-5"></i></button>
+            <span class="page-title" id="pageTitle">Dashboard</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small" id="currentDate"></span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()" title="Tema"><i class="bi bi-moon-stars"></i></button>
+        </div>
+    </div>
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <div id="page-dashboard" class="page active">
+        <div class="row g-3 mb-4" id="dashStats"></div>
+        <div class="row g-3 mb-4">
+            <div class="col-lg-8">
+                <div class="card chart-card"><div class="card-body">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-graph-up me-2"></i>Ingresos vs Egresos</h6>
+                    <div class="chart-container"><canvas id="chartLine"></canvas></div>
+                </div></div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card chart-card"><div class="card-body">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart me-2"></i>Distribución Gastos</h6>
+                    <div class="chart-container"><canvas id="chartPie"></canvas></div>
+                </div></div>
+            </div>
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-lg-6">
+                <div class="card chart-card"><div class="card-body">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2"></i>Balance Mensual</h6>
+                    <div class="chart-container"><canvas id="chartBar"></canvas></div>
+                </div></div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card chart-card"><div class="card-body">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow me-2"></i>Ahorro Acumulado</h6>
+                    <div class="chart-container"><canvas id="chartArea"></canvas></div>
+                </div></div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="card table-card">
+                    <div class="card-header"><h6><i class="bi bi-clock-history me-2"></i>Últimos Ingresos</h6></div>
+                    <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><tbody id="dashLastIngresos"></tbody></table></div></div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card table-card">
+                    <div class="card-header"><h6><i class="bi bi-clock-history me-2"></i>Últimos Egresos</h6></div>
+                    <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><tbody id="dashLastEgresos"></tbody></table></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== INGRESOS ==================== -->
+    <div id="page-ingresos" class="page">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-arrow-down-circle text-success me-2"></i>Ingresos</h5>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalIngreso" onclick="resetIngresoForm()"><i class="bi bi-plus-lg me-1"></i>Nuevo Ingreso</button>
+        </div>
+        <div class="filters-bar">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3"><label class="form-label small fw-semibold">Desde</label><input type="date" class="form-control form-control-sm" id="filtIngDesde"></div>
+                <div class="col-md-3"><label class="form-label small fw-semibold">Hasta</label><input type="date" class="form-control form-control-sm" id="filtIngHasta"></div>
+                <div class="col-md-3"><label class="form-label small fw-semibold">Categoría</label><select class="form-select form-select-sm" id="filtIngCat"><option value="">Todas</option></select></div>
+                <div class="col-md-3"><label class="form-label small fw-semibold">Buscar</label><input type="text" class="form-control form-control-sm" id="filtIngBuscar" placeholder="Descripción..."></div>
+            </div>
+        </div>
+        <div class="row g-3 mb-3" id="ingresosStats"></div>
+        <div class="card table-card">
+            <div class="card-body p-0"><div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th class="text-end">Bruto</th><th class="text-end">Impuestos</th><th class="text-end">Neto</th><th>Método</th><th>Recurrente</th><th width="80"></th></tr></thead>
+                    <tbody id="ingresosTable"></tbody>
+                </table>
+            </div></div>
+        </div>
+    </div>
+
+    <!-- ==================== EGRESOS ==================== -->
+    <div id="page-egresos" class="page">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-arrow-up-circle text-danger me-2"></i>Egresos</h5>
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalEgreso" onclick="resetEgresoForm()"><i class="bi bi-plus-lg me-1"></i>Nuevo Egreso</button>
+        </div>
+        <div class="filters-bar">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-2"><label class="form-label small fw-semibold">Desde</label><input type="date" class="form-control form-control-sm" id="filtEgDesde"></div>
+                <div class="col-md-2"><label class="form-label small fw-semibold">Hasta</label><input type="date" class="form-control form-control-sm" id="filtEgHasta"></div>
+                <div class="col-md-2"><label class="form-label small fw-semibold">Categoría</label><select class="form-select form-select-sm" id="filtEgCat"><option value="">Todas</option></select></div>
+                <div class="col-md-2"><label class="form-label small fw-semibold">Tipo</label><select class="form-select form-select-sm" id="filtEgTipo"><option value="">Todos</option><option>Fijo</option><option>Variable</option></select></div>
+                <div class="col-md-2"><label class="form-label small fw-semibold">Método</label><select class="form-select form-select-sm" id="filtEgMetodo"><option value="">Todos</option></select></div>
+                <div class="col-md-2"><label class="form-label small fw-semibold">Buscar</label><input type="text" class="form-control form-control-sm" id="filtEgBuscar" placeholder="Descripción..."></div>
+            </div>
+        </div>
+        <div class="row g-3 mb-3" id="egresosStats"></div>
+        <div class="card table-card">
+            <div class="card-body p-0"><div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th class="text-end">Monto</th><th>Método</th><th>Tipo</th><th>Necesidad</th><th>Deducible</th><th width="80"></th></tr></thead>
+                    <tbody id="egresosTable"></tbody>
+                </table>
+            </div></div>
+        </div>
+    </div>
+
+    <!-- ==================== RESUMEN ==================== -->
+    <div id="page-resumen" class="page">
+        <h5 class="fw-bold mb-3"><i class="bi bi-calendar3 me-2"></i>Resumen Mensual</h5>
+        <div class="row g-3 mb-3" id="resumenStats"></div>
+        <div class="card table-card">
+            <div class="card-body p-0"><div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Mes</th><th class="text-end">Ing. Brutos</th><th class="text-end">Impuestos</th><th class="text-end">Ing. Netos</th><th class="text-end">G. Fijos</th><th class="text-end">G. Variables</th><th class="text-end">Egresos</th><th class="text-end">Balance</th><th class="text-end">Ahorro %</th><th class="text-end">Acumulado</th><th>Estado</th></tr></thead>
+                    <tbody id="resumenTable"></tbody>
+                </table>
+            </div></div>
+        </div>
+    </div>
+
+    <!-- ==================== CATEGORÍAS ANÁLISIS ==================== -->
+    <div id="page-categorias" class="page">
+        <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart me-2"></i>Análisis por Categorías</h5>
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <div class="card table-card">
+                    <div class="card-header"><h6>Gastos por Categoría</h6></div>
+                    <div class="card-body p-0"><div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead><tr><th>Categoría</th><th class="text-end">Total</th><th class="text-end">%</th><th class="text-center"># Trans.</th><th class="text-end">Promedio</th><th>Nivel</th></tr></thead>
+                            <tbody id="catAnalisisTable"></tbody>
+                        </table>
+                    </div></div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card chart-card mb-3"><div class="card-body">
+                    <h6 class="fw-bold mb-3">Distribución</h6>
+                    <div class="chart-container"><canvas id="chartCatPie"></canvas></div>
+                </div></div>
+                <div class="card table-card">
+                    <div class="card-header"><h6>Por Método de Pago</h6></div>
+                    <div class="card-body p-0"><div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead><tr><th>Método</th><th class="text-end">Total</th><th class="text-end">%</th></tr></thead>
+                            <tbody id="metodoAnalisisTable"></tbody>
+                        </table>
+                    </div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PRESUPUESTO ==================== -->
+    <div id="page-presupuesto" class="page">
+        <h5 class="fw-bold mb-3"><i class="bi bi-bullseye me-2"></i>Presupuesto vs Real</h5>
+        <div class="row g-3 mb-3" id="presupuestoStats"></div>
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <div class="card table-card">
+                    <div class="card-header"><h6>Detalle por Categoría</h6><small class="text-muted">Clic en presupuesto para editar</small></div>
+                    <div class="card-body p-0"><div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead><tr><th>Categoría</th><th class="text-end">Presupuesto</th><th class="text-end">Real (prom.)</th><th class="text-end">Diferencia</th><th class="text-end">% Usado</th><th>Estado</th></tr></thead>
+                            <tbody id="presupuestoTable"></tbody>
+                        </table>
+                    </div></div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card chart-card"><div class="card-body">
+                    <h6 class="fw-bold mb-3">Presupuesto vs Real</h6>
+                    <div class="chart-container" style="height:400px"><canvas id="chartPresupuesto"></canvas></div>
+                </div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== METAS ==================== -->
+    <div id="page-metas" class="page">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-trophy text-warning me-2"></i>Metas Financieras</h5>
+            <button class="btn btn-warning text-white" data-bs-toggle="modal" data-bs-target="#modalMeta" onclick="resetMetaForm()"><i class="bi bi-plus-lg me-1"></i>Nueva Meta</button>
+        </div>
+        <div class="row g-3 mb-3" id="metasStats"></div>
+        <div class="row g-3" id="metasList"></div>
+    </div>
+
+    <!-- ==================== DEUDAS ==================== -->
+    <div id="page-deudas" class="page">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-credit-card me-2"></i>Deudas y Créditos</h5>
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalDeuda" onclick="resetDeudaForm()"><i class="bi bi-plus-lg me-1"></i>Nueva Deuda</button>
+        </div>
+        <div class="row g-3 mb-3" id="deudasStats"></div>
+        <div class="card table-card">
+            <div class="card-body p-0"><div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Acreedor</th><th>Tipo</th><th class="text-end">Saldo</th><th class="text-end">Tasa</th><th class="text-end">Pago Mensual</th><th class="text-center">Plazo</th><th class="text-end">Total</th><th class="text-end">Intereses</th><th>Prioridad</th><th width="80"></th></tr></thead>
+                    <tbody id="deudasTable"></tbody>
+                </table>
+            </div></div>
+        </div>
+    </div>
+
+    <!-- ==================== CONFIG CATEGORÍAS ==================== -->
+    <div id="page-config-categorias" class="page">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-tags me-2"></i>Gestión de Categorías</h5>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCategoria" onclick="resetCategoriaForm()"><i class="bi bi-plus-lg me-1"></i>Nueva Categoría</button>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="card table-card">
+                    <div class="card-header"><h6><i class="bi bi-arrow-down-circle text-success me-2"></i>Categorías de Ingresos</h6></div>
+                    <div class="card-body p-0"><div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead><tr><th>Color</th><th>Nombre</th><th>Icono</th><th width="100"></th></tr></thead>
+                            <tbody id="catIngresosTable"></tbody>
+                        </table>
+                    </div></div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card table-card">
+                    <div class="card-header"><h6><i class="bi bi-arrow-up-circle text-danger me-2"></i>Categorías de Egresos</h6></div>
+                    <div class="card-body p-0"><div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead><tr><th>Color</th><th>Nombre</th><th>Icono</th><th width="100"></th></tr></thead>
+                            <tbody id="catEgresosTable"></tbody>
+                        </table>
+                    </div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== CONFIG MÉTODOS ==================== -->
+    <div id="page-config-metodos" class="page">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-credit-card-2-front me-2"></i>Métodos de Pago</h5>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMetodo" onclick="resetMetodoForm()"><i class="bi bi-plus-lg me-1"></i>Nuevo Método</button>
+        </div>
+        <div class="card table-card">
+            <div class="card-body p-0"><div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Icono</th><th>Nombre</th><th width="100"></th></tr></thead>
+                    <tbody id="metodosTable"></tbody>
+                </table>
+            </div></div>
+        </div>
+    </div>
+
+    <!-- ==================== AJUSTES ==================== -->
+    <div id="page-ajustes" class="page">
+        <h5 class="fw-bold mb-3"><i class="bi bi-gear me-2"></i>Ajustes</h5>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="card table-card">
+                    <div class="card-header"><h6><i class="bi bi-database me-2"></i>Datos</h6></div>
+                    <div class="card-body">
+                        <button class="btn btn-outline-primary me-2 mb-2" onclick="exportData()"><i class="bi bi-download me-1"></i>Exportar JSON</button>
+                        <button class="btn btn-outline-secondary me-2 mb-2" onclick="document.getElementById('importFile').click()"><i class="bi bi-upload me-1"></i>Importar JSON</button>
+                        <input type="file" id="importFile" class="d-none" accept=".json" onchange="handleImport(event)">
+                        <button class="btn btn-outline-success me-2 mb-2" onclick="exportCSV()"><i class="bi bi-filetype-csv me-1"></i>Exportar CSV</button>
+                        <hr>
+                        <button class="btn btn-outline-danger" onclick="clearAll()"><i class="bi bi-trash me-1"></i>Borrar todos los datos</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card table-card">
+                    <div class="card-header"><h6><i class="bi bi-currency-exchange me-2"></i>Moneda</h6></div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Moneda</label>
+                            <select class="form-select" id="configMoneda" onchange="saveCurrency()">
+                                <option value="MXN">MXN - Peso Mexicano</option>
+                                <option value="USD">USD - Dólar</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="COP">COP - Peso Colombiano</option>
+                                <option value="ARS">ARS - Peso Argentino</option>
+                                <option value="CLP">CLP - Peso Chileno</option>
+                                <option value="PEN">PEN - Sol Peruano</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- MODAL INGRESO -->
+<div class="modal fade" id="modalIngreso" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header bg-success text-white"><h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i><span id="modalIngresoTitle">Nuevo Ingreso</span></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <input type="hidden" id="ingEditId">
+            <div class="row g-3">
+                <div class="col-6"><label class="form-label fw-semibold">Fecha *</label><input type="date" class="form-control" id="ingFecha"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Categoría *</label><select class="form-select" id="ingCategoria"></select></div>
+                <div class="col-12"><label class="form-label fw-semibold">Descripción</label><input type="text" class="form-control" id="ingDescripcion" placeholder="Ej: Nómina quincenal"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Monto bruto *</label><input type="number" class="form-control" id="ingBruto" step="0.01" min="0"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Impuestos/Retenciones</label><input type="number" class="form-control" id="ingImpuestos" step="0.01" min="0" value="0"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Método de cobro</label><select class="form-select" id="ingMetodo"></select></div>
+                <div class="col-6"><label class="form-label fw-semibold">¿Recurrente?</label><select class="form-select" id="ingRecurrente"><option>Sí</option><option>No</option></select></div>
+                <div class="col-12"><label class="form-label fw-semibold">Notas</label><textarea class="form-control" id="ingNotas" rows="2"></textarea></div>
+            </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-success" onclick="saveIngreso()"><i class="bi bi-check-lg me-1"></i>Guardar</button></div>
+    </div></div>
+</div>
+
+<!-- MODAL EGRESO -->
+<div class="modal fade" id="modalEgreso" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header bg-danger text-white"><h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i><span id="modalEgresoTitle">Nuevo Egreso</span></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <input type="hidden" id="egEditId">
+            <div class="row g-3">
+                <div class="col-md-4"><label class="form-label fw-semibold">Fecha *</label><input type="date" class="form-control" id="egFecha"></div>
+                <div class="col-md-4"><label class="form-label fw-semibold">Categoría *</label><select class="form-select" id="egCategoria"></select></div>
+                <div class="col-md-4"><label class="form-label fw-semibold">Monto *</label><input type="number" class="form-control" id="egMonto" step="0.01" min="0"></div>
+                <div class="col-12"><label class="form-label fw-semibold">Descripción</label><input type="text" class="form-control" id="egDescripcion" placeholder="Ej: Renta mensual"></div>
+                <div class="col-md-4"><label class="form-label fw-semibold">Método de pago</label><select class="form-select" id="egMetodo"></select></div>
+                <div class="col-md-4"><label class="form-label fw-semibold">Fijo / Variable</label><select class="form-select" id="egTipo"><option>Fijo</option><option>Variable</option></select></div>
+                <div class="col-md-4"><label class="form-label fw-semibold">Necesidad (1-5)</label><select class="form-select" id="egNecesidad"><option value="5">5 - Esencial</option><option value="4">4 - Importante</option><option value="3">3 - Moderado</option><option value="2">2 - Poco necesario</option><option value="1">1 - Lujo</option></select></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">¿Deducible?</label><select class="form-select" id="egDeducible"><option>No</option><option>Sí</option></select></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">MSI</label><input type="number" class="form-control" id="egMSI" value="0" min="0"></div>
+                <div class="col-12"><label class="form-label fw-semibold">Notas</label><textarea class="form-control" id="egNotas" rows="2"></textarea></div>
+            </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-danger" onclick="saveEgreso()"><i class="bi bi-check-lg me-1"></i>Guardar</button></div>
+    </div></div>
+</div>
+
+<!-- MODAL META -->
+<div class="modal fade" id="modalMeta" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header bg-warning text-white"><h5 class="modal-title"><i class="bi bi-trophy me-2"></i><span id="modalMetaTitle">Nueva Meta</span></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <input type="hidden" id="metaEditId">
+            <div class="row g-3">
+                <div class="col-12"><label class="form-label fw-semibold">Nombre *</label><input type="text" class="form-control" id="metaNombre" placeholder="Ej: Fondo de emergencia"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Objetivo *</label><input type="number" class="form-control" id="metaObjetivo" step="0.01" min="0"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Ahorrado actual</label><input type="number" class="form-control" id="metaAhorrado" step="0.01" min="0" value="0"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Fecha límite</label><input type="date" class="form-control" id="metaFecha"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Prioridad</label><select class="form-select" id="metaPrioridad"><option>Alta</option><option>Media</option><option>Baja</option></select></div>
+            </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-warning text-white" onclick="saveMeta()"><i class="bi bi-check-lg me-1"></i>Guardar</button></div>
+    </div></div>
+</div>
+
+<!-- MODAL DEUDA -->
+<div class="modal fade" id="modalDeuda" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header bg-danger text-white"><h5 class="modal-title"><i class="bi bi-credit-card me-2"></i><span id="modalDeudaTitle">Nueva Deuda</span></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <input type="hidden" id="deudaEditId">
+            <div class="row g-3">
+                <div class="col-6"><label class="form-label fw-semibold">Acreedor *</label><input type="text" class="form-control" id="deudaAcreedor"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Tipo</label><select class="form-select" id="deudaTipo"><option>Tarjeta crédito</option><option>Hipoteca</option><option>Préstamo personal</option><option>Automotriz</option><option>Educativo</option><option>Otro</option></select></div>
+                <div class="col-6"><label class="form-label fw-semibold">Saldo actual *</label><input type="number" class="form-control" id="deudaSaldo" step="0.01" min="0"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Tasa interés anual (%)</label><input type="number" class="form-control" id="deudaTasa" step="0.01" min="0"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Pago mensual</label><input type="number" class="form-control" id="deudaPago" step="0.01" min="0"></div>
+                <div class="col-6"><label class="form-label fw-semibold">Plazo restante (meses)</label><input type="number" class="form-control" id="deudaPlazo" min="1" value="12"></div>
+            </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-danger" onclick="saveDeuda()"><i class="bi bi-check-lg me-1"></i>Guardar</button></div>
+    </div></div>
+</div>
+
+<!-- MODAL CATEGORÍA -->
+<div class="modal fade" id="modalCategoria" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header bg-primary text-white"><h5 class="modal-title"><i class="bi bi-tags me-2"></i><span id="modalCategoriaTitle">Nueva Categoría</span></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <input type="hidden" id="catEditId">
+            <div class="row g-3">
+                <div class="col-12"><label class="form-label fw-semibold">Tipo *</label><select class="form-select" id="catTipo"><option value="ingreso">Ingreso</option><option value="egreso">Egreso</option></select></div>
+                <div class="col-12"><label class="form-label fw-semibold">Nombre *</label><input type="text" class="form-control" id="catNombre" placeholder="Ej: Alimentación"></div>
+                <div class="col-12"><label class="form-label fw-semibold">Icono</label><input type="text" class="form-control" id="catIcono" placeholder="Ej: bi-cart o emoji 🛒" value="bi-tag"></div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Color</label>
+                    <div class="color-grid" id="colorGrid"></div>
+                    <input type="hidden" id="catColor" value="#0d47a1">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" onclick="saveCategoria()"><i class="bi bi-check-lg me-1"></i>Guardar</button></div>
+    </div></div>
+</div>
+
+<!-- MODAL MÉTODO -->
+<div class="modal fade" id="modalMetodo" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header bg-primary text-white"><h5 class="modal-title"><i class="bi bi-credit-card-2-front me-2"></i><span id="modalMetodoTitle">Nuevo Método</span></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <input type="hidden" id="metodoEditId">
+            <div class="row g-3">
+                <div class="col-12"><label class="form-label fw-semibold">Nombre *</label><input type="text" class="form-control" id="metodoNombre" placeholder="Ej: Tarjeta Visa"></div>
+                <div class="col-12"><label class="form-label fw-semibold">Icono</label><input type="text" class="form-control" id="metodoIcono" placeholder="Ej: bi-credit-card" value="bi-wallet2"></div>
+            </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" onclick="saveMetodo()"><i class="bi bi-check-lg me-1"></i>Guardar</button></div>
+    </div></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="appToast" class="toast align-items-center text-bg-primary border-0" role="alert">
+        <div class="d-flex"><div class="toast-body" id="toastMsg"></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// =============================================================
+// APP STATE
+// =============================================================
+const COLORS = ['#0d47a1','#1565c0','#2e7d32','#c62828','#f57f17','#6a1b9a','#00695c','#e65100','#283593','#ad1457','#00838f','#558b2f','#bf360c','#4527a0','#1b5e20','#880e4f','#ff6f00','#004d40'];
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const NEC = {1:'Lujo',2:'Poco nec.',3:'Moderado',4:'Importante',5:'Esencial'};
+let charts = {};
+
+let DB = {
+    currency: 'MXN',
+    categoriasIngreso: [
+        {id:1,nombre:'Salario',color:'#2e7d32',icono:'bi-briefcase'},
+        {id:2,nombre:'Freelance',color:'#1565c0',icono:'bi-laptop'},
+        {id:3,nombre:'Inversiones',color:'#6a1b9a',icono:'bi-graph-up'},
+        {id:4,nombre:'Negocio propio',color:'#e65100',icono:'bi-shop'},
+        {id:5,nombre:'Rentas cobradas',color:'#00695c',icono:'bi-house'},
+        {id:6,nombre:'Bonos',color:'#f57f17',icono:'bi-gift'},
+        {id:7,nombre:'Otro ingreso',color:'#607d8b',icono:'bi-three-dots'},
+    ],
+    categoriasEgreso: [
+        {id:10,nombre:'Vivienda',color:'#0d47a1',icono:'bi-house-door'},
+        {id:11,nombre:'Alimentación',color:'#2e7d32',icono:'bi-cart'},
+        {id:12,nombre:'Transporte',color:'#e65100',icono:'bi-car-front'},
+        {id:13,nombre:'Servicios',color:'#00838f',icono:'bi-lightning'},
+        {id:14,nombre:'Salud',color:'#c62828',icono:'bi-heart-pulse'},
+        {id:15,nombre:'Entretenimiento',color:'#6a1b9a',icono:'bi-controller'},
+        {id:16,nombre:'Educación',color:'#1565c0',icono:'bi-mortarboard'},
+        {id:17,nombre:'Ropa',color:'#ad1457',icono:'bi-bag'},
+        {id:18,nombre:'Seguros',color:'#283593',icono:'bi-shield-check'},
+        {id:19,nombre:'Deudas/Créditos',color:'#b71c1c',icono:'bi-credit-card-2-back'},
+        {id:20,nombre:'Ahorro/Inversión',color:'#00695c',icono:'bi-piggy-bank'},
+        {id:21,nombre:'Suscripciones',color:'#f57f17',icono:'bi-play-circle'},
+        {id:22,nombre:'Mascotas',color:'#558b2f',icono:'bi-emoji-heart-eyes'},
+        {id:23,nombre:'Otro gasto',color:'#607d8b',icono:'bi-three-dots'},
+    ],
+    metodosPago: [
+        {id:1,nombre:'Efectivo',icono:'bi-cash-stack'},
+        {id:2,nombre:'Tarjeta débito',icono:'bi-credit-card'},
+        {id:3,nombre:'Tarjeta crédito',icono:'bi-credit-card-2-front'},
+        {id:4,nombre:'Transferencia',icono:'bi-arrow-left-right'},
+        {id:5,nombre:'PayPal',icono:'bi-paypal'},
+        {id:6,nombre:'Domiciliación',icono:'bi-calendar-check'},
+    ],
+    ingresos: [],
+    egresos: [],
+    metas: [],
+    deudas: [],
+    presupuestos: {}
+};
+
+// =============================================================
+// PERSISTENCE
+// =============================================================
+function save() { localStorage.setItem('finanzapp_pro', JSON.stringify(DB)); }
+function load() {
+    const d = localStorage.getItem('finanzapp_pro');
+    if (d) { try { DB = JSON.parse(d); } catch(e) {} }
+    initPresupuestos();
+}
+function initPresupuestos() {
+    DB.categoriasEgreso.forEach(c => {
+        if (!(c.nombre in DB.presupuestos)) DB.presupuestos[c.nombre] = 0;
+    });
+}
+
+// =============================================================
+// UTILS
+// =============================================================
+function fmt(n) { return new Intl.NumberFormat('es-MX',{style:'currency',currency:DB.currency||'MXN',minimumFractionDigits:2}).format(n); }
+function fmtP(n) { return (n*100).toFixed(1)+'%'; }
+function toast(msg, type='primary') {
+    const el = document.getElementById('appToast');
+    el.className = `toast align-items-center text-bg-${type} border-0`;
+    document.getElementById('toastMsg').textContent = msg;
+    bootstrap.Toast.getOrCreateInstance(el).show();
+}
+function getCatIngreso(nombre) { return DB.categoriasIngreso.find(c=>c.nombre===nombre) || {color:'#607d8b',icono:'bi-tag'}; }
+function getCatEgreso(nombre) { return DB.categoriasEgreso.find(c=>c.nombre===nombre) || {color:'#607d8b',icono:'bi-tag'}; }
+function catTag(cat) { return `<span class="cat-tag" style="background:${cat.color}15;color:${cat.color}"><span class="cat-dot" style="background:${cat.color}"></span>${cat.nombre||''}</span>`; }
+function statCard(icon, label, value, color='primary', extraClass='') {
+    return `<div class="col-lg-3 col-md-6"><div class="card stat-card ${extraClass}"><div class="card-body d-flex align-items-center gap-3">
+        <div class="stat-icon bg-${color} bg-opacity-10 text-${color}"><i class="bi ${icon}"></i></div>
+        <div><div class="stat-value">${value}</div><div class="stat-label">${label}</div></div>
+    </div></div></div>`;
+}
+function badge(text, type) { return `<span class="badge bg-${type}">${text}</span>`; }
+function nextId() { return Date.now() + Math.random()*1000|0; }
+function destroyCharts() { Object.values(charts).forEach(c=>c&&c.destroy()); charts={}; }
+function closeModal(id) { bootstrap.Modal.getInstance(document.getElementById(id))?.hide(); }
+
+// =============================================================
+// NAVIGATION
+// =============================================================
+function navigateTo(page) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
+    document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.remove('active'));
+    document.querySelectorAll('.sidebar-link').forEach(l=>{ if(l.getAttribute('onclick')?.includes(page)) l.classList.add('active'); });
+    const titles = {dashboard:'Dashboard',ingresos:'Ingresos',egresos:'Egresos',resumen:'Resumen Mensual',categorias:'Análisis por Categorías',presupuesto:'Presupuesto',metas:'Metas Financieras',deudas:'Deudas y Créditos','config-categorias':'Gestión de Categorías','config-metodos':'Métodos de Pago',ajustes:'Ajustes'};
+    document.getElementById('pageTitle').textContent = titles[page]||page;
+    if (window.innerWidth < 992) toggleSidebar(false);
+    refreshAll();
+}
+function toggleSidebar(force) {
+    const sb = document.getElementById('sidebar');
+    const ov = document.getElementById('sidebarOverlay');
+    const show = force !== undefined ? force : !sb.classList.contains('show');
+    sb.classList.toggle('show', show);
+    ov.classList.toggle('show', show);
+}
+function toggleTheme() {
+    const html = document.documentElement;
+    html.dataset.bsTheme = html.dataset.bsTheme === 'dark' ? 'light' : 'dark';
+    refreshAll();
+}
+
+// =============================================================
+// POPULATE SELECTS
+// =============================================================
+function populateSelects() {
+    const ingCatSel = ['ingCategoria','filtIngCat'];
+    const egCatSel = ['egCategoria','filtEgCat'];
+    const metSel = ['ingMetodo','egMetodo','filtEgMetodo'];
+    ingCatSel.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const val = el.value;
+        const isFilter = id.startsWith('filt');
+        el.innerHTML = isFilter ? '<option value="">Todas</option>' : '';
+        DB.categoriasIngreso.forEach(c => el.innerHTML += `<option>${c.nombre}</option>`);
+        if (val) el.value = val;
+    });
+    egCatSel.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const val = el.value;
+        const isFilter = id.startsWith('filt');
+        el.innerHTML = isFilter ? '<option value="">Todas</option>' : '';
+        DB.categoriasEgreso.forEach(c => el.innerHTML += `<option>${c.nombre}</option>`);
+        if (val) el.value = val;
+    });
+    metSel.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const val = el.value;
+        const isFilter = id.startsWith('filt');
+        el.innerHTML = isFilter ? '<option value="">Todos</option>' : '';
+        DB.metodosPago.forEach(m => el.innerHTML += `<option>${m.nombre}</option>`);
+        if (val) el.value = val;
+    });
+}
+
+// =============================================================
+// INGRESOS CRUD
+// =============================================================
+function resetIngresoForm() {
+    document.getElementById('ingEditId').value = '';
+    document.getElementById('modalIngresoTitle').textContent = 'Nuevo Ingreso';
+    document.getElementById('ingFecha').valueAsDate = new Date();
+    ['ingDescripcion','ingNotas'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('ingBruto').value = '';
+    document.getElementById('ingImpuestos').value = '0';
+    populateSelects();
+}
+function editIngreso(id) {
+    const ing = DB.ingresos.find(i=>i.id===id);
+    if (!ing) return;
+    populateSelects();
+    document.getElementById('ingEditId').value = id;
+    document.getElementById('modalIngresoTitle').textContent = 'Editar Ingreso';
+    document.getElementById('ingFecha').value = ing.fecha;
+    document.getElementById('ingCategoria').value = ing.categoria;
+    document.getElementById('ingDescripcion').value = ing.descripcion;
+    document.getElementById('ingBruto').value = ing.bruto;
+    document.getElementById('ingImpuestos').value = ing.impuestos;
+    document.getElementById('ingMetodo').value = ing.metodo;
+    document.getElementById('ingRecurrente').value = ing.recurrente;
+    document.getElementById('ingNotas').value = ing.notas||'';
+    new bootstrap.Modal(document.getElementById('modalIngreso')).show();
+}
+function saveIngreso() {
+    const fecha = document.getElementById('ingFecha').value;
+    const bruto = parseFloat(document.getElementById('ingBruto').value);
+    if (!fecha||isNaN(bruto)||bruto<=0) { toast('Completa los campos obligatorios','warning'); return; }
+    const obj = {
+        id: parseInt(document.getElementById('ingEditId').value) || nextId(),
+        fecha, categoria: document.getElementById('ingCategoria').value,
+        descripcion: document.getElementById('ingDescripcion').value,
+        bruto, impuestos: parseFloat(document.getElementById('ingImpuestos').value)||0,
+        metodo: document.getElementById('ingMetodo').value,
+        recurrente: document.getElementById('ingRecurrente').value,
+        notas: document.getElementById('ingNotas').value
+    };
+    const idx = DB.ingresos.findIndex(i=>i.id===obj.id);
+    if (idx >= 0) DB.ingresos[idx] = obj; else DB.ingresos.push(obj);
+    save(); closeModal('modalIngreso'); refreshAll();
+    toast('✅ Ingreso guardado','success');
+}
+function deleteIngreso(id) { if(!confirm('¿Eliminar este ingreso?')) return; DB.ingresos=DB.ingresos.filter(i=>i.id!==id); save(); refreshAll(); toast('Ingreso eliminado','danger'); }
+
+function getFilteredIngresos() {
+    let items = [...DB.ingresos];
+    const desde = document.getElementById('filtIngDesde')?.value;
+    const hasta = document.getElementById('filtIngHasta')?.value;
+    const cat = document.getElementById('filtIngCat')?.value;
+    const buscar = document.getElementById('filtIngBuscar')?.value?.toLowerCase();
+    if (desde) items = items.filter(i=>i.fecha>=desde);
+    if (hasta) items = items.filter(i=>i.fecha<=hasta);
+    if (cat) items = items.filter(i=>i.categoria===cat);
+    if (buscar) items = items.filter(i=>i.descripcion.toLowerCase().includes(buscar));
+    return items.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+}
+
+function renderIngresos() {
+    const items = getFilteredIngresos();
+    document.getElementById('badge-ingresos').textContent = DB.ingresos.length;
+    const tb = document.getElementById('ingresosTable');
+    if (!items.length) { tb.innerHTML = `<tr><td colspan="9" class="empty-state"><i class="bi bi-inbox"></i><p>Sin ingresos</p></td></tr>`; }
+    else {
+        tb.innerHTML = items.map(i => {
+            const cat = getCatIngreso(i.categoria);
+            return `<tr>
+                <td>${i.fecha}</td><td>${catTag(cat)}</td><td>${i.descripcion}</td>
+                <td class="text-end currency">${fmt(i.bruto)}</td><td class="text-end currency text-muted">${fmt(i.impuestos)}</td>
+                <td class="text-end currency text-income">${fmt(i.bruto-i.impuestos)}</td>
+                <td><small>${i.metodo}</small></td><td class="text-center">${i.recurrente==='Sí'?'<i class="bi bi-arrow-repeat text-success"></i>':'<i class="bi bi-dash text-muted"></i>'}</td>
+                <td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary btn-sm" onclick="editIngreso(${i.id})"><i class="bi bi-pencil"></i></button><button class="btn btn-outline-danger btn-sm" onclick="deleteIngreso(${i.id})"><i class="bi bi-trash"></i></button></div></td>
+            </tr>`;
+        }).join('');
+    }
+    // Stats
+    const total = items.reduce((s,i)=>s+i.bruto,0);
+    const imp = items.reduce((s,i)=>s+i.impuestos,0);
+    const neto = total-imp;
+    document.getElementById('ingresosStats').innerHTML =
+        statCard('bi-cash-coin','Total Bruto',fmt(total),'success') +
+        statCard('bi-receipt','Impuestos',fmt(imp),'warning') +
+        statCard('bi-wallet2','Total Neto',fmt(neto),'primary') +
+        statCard('bi-hash','Transacciones',items.length,'info');
+}
+
+// =============================================================
+// EGRESOS CRUD
+// =============================================================
+function resetEgresoForm() {
+    document.getElementById('egEditId').value = '';
+    document.getElementById('modalEgresoTitle').textContent = 'Nuevo Egreso';
+    document.getElementById('egFecha').valueAsDate = new Date();
+    ['egDescripcion','egNotas'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('egMonto').value = '';
+    document.getElementById('egMSI').value = '0';
+    populateSelects();
+}
+function editEgreso(id) {
+    const eg = DB.egresos.find(i=>i.id===id);
+    if (!eg) return;
+    populateSelects();
+    document.getElementById('egEditId').value = id;
+    document.getElementById('modalEgresoTitle').textContent = 'Editar Egreso';
+    document.getElementById('egFecha').value = eg.fecha;
+    document.getElementById('egCategoria').value = eg.categoria;
+    document.getElementById('egMonto').value = eg.monto;
+    document.getElementById('egDescripcion').value = eg.descripcion;
+    document.getElementById('egMetodo').value = eg.metodo;
+    document.getElementById('egTipo').value = eg.tipo;
+    document.getElementById('egNecesidad').value = eg.necesidad;
+    document.getElementById('egDeducible').value = eg.deducible;
+    document.getElementById('egMSI').value = eg.msi||0;
+    document.getElementById('egNotas').value = eg.notas||'';
+    new bootstrap.Modal(document.getElementById('modalEgreso')).show();
+}
+function saveEgreso() {
+    const fecha = document.getElementById('egFecha').value;
+    const monto = parseFloat(document.getElementById('egMonto').value);
+    if (!fecha||isNaN(monto)||monto<=0) { toast('Completa los campos obligatorios','warning'); return; }
+    const obj = {
+        id: parseInt(document.getElementById('egEditId').value) || nextId(),
+        fecha, categoria: document.getElementById('egCategoria').value,
+        descripcion: document.getElementById('egDescripcion').value,
+        monto, metodo: document.getElementById('egMetodo').value,
+        tipo: document.getElementById('egTipo').value,
+        necesidad: parseInt(document.getElementById('egNecesidad').value),
+        deducible: document.getElementById('egDeducible').value,
+        msi: parseInt(document.getElementById('egMSI').value)||0,
+        notas: document.getElementById('egNotas').value
+    };
+    const idx = DB.egresos.findIndex(i=>i.id===obj.id);
+    if (idx >= 0) DB.egresos[idx] = obj; else DB.egresos.push(obj);
+    save(); closeModal('modalEgreso'); refreshAll();
+    toast('✅ Egreso guardado','success');
+}
+function deleteEgreso(id) { if(!confirm('¿Eliminar este egreso?')) return; DB.egresos=DB.egresos.filter(i=>i.id!==id); save(); refreshAll(); toast('Egreso eliminado','danger'); }
+
+function getFilteredEgresos() {
+    let items = [...DB.egresos];
+    const desde = document.getElementById('filtEgDesde')?.value;
+    const hasta = document.getElementById('filtEgHasta')?.value;
+    const cat = document.getElementById('filtEgCat')?.value;
+    const tipo = document.getElementById('filtEgTipo')?.value;
+    const metodo = document.getElementById('filtEgMetodo')?.value;
+    const buscar = document.getElementById('filtEgBuscar')?.value?.toLowerCase();
+    if (desde) items = items.filter(i=>i.fecha>=desde);
+    if (hasta) items = items.filter(i=>i.fecha<=hasta);
+    if (cat) items = items.filter(i=>i.categoria===cat);
+    if (tipo) items = items.filter(i=>i.tipo===tipo);
+    if (metodo) items = items.filter(i=>i.metodo===metodo);
+    if (buscar) items = items.filter(i=>i.descripcion.toLowerCase().includes(buscar));
+    return items.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+}
+
+function renderEgresos() {
+    const items = getFilteredEgresos();
+    document.getElementById('badge-egresos').textContent = DB.egresos.length;
+    const tb = document.getElementById('egresosTable');
+    if (!items.length) { tb.innerHTML = `<tr><td colspan="9" class="empty-state"><i class="bi bi-inbox"></i><p>Sin egresos</p></td></tr>`; }
+    else {
+        tb.innerHTML = items.map(eg => {
+            const cat = getCatEgreso(eg.categoria);
+            return `<tr>
+                <td>${eg.fecha}</td><td>${catTag(cat)}</td><td>${eg.descripcion}</td>
+                <td class="text-end currency text-expense">${fmt(eg.monto)}</td>
+                <td><small>${eg.metodo}</small></td>
+                <td>${badge(eg.tipo, eg.tipo==='Fijo'?'primary':'warning')}</td>
+                <td class="text-center"><small>${NEC[eg.necesidad]||eg.necesidad}</small></td>
+                <td class="text-center">${eg.deducible==='Sí'?'<i class="bi bi-check-circle text-success"></i>':'<i class="bi bi-dash text-muted"></i>'}</td>
+                <td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary btn-sm" onclick="editEgreso(${eg.id})"><i class="bi bi-pencil"></i></button><button class="btn btn-outline-danger btn-sm" onclick="deleteEgreso(${eg.id})"><i class="bi bi-trash"></i></button></div></td>
+            </tr>`;
+        }).join('');
+    }
+    const total = items.reduce((s,i)=>s+i.monto,0);
+    const fijo = items.filter(i=>i.tipo==='Fijo').reduce((s,i)=>s+i.monto,0);
+    document.getElementById('egresosStats').innerHTML =
+        statCard('bi-cash-coin','Total Egresos',fmt(total),'danger') +
+        statCard('bi-lock','Gastos Fijos',fmt(fijo),'primary') +
+        statCard('bi-shuffle','Gastos Variables',fmt(total-fijo),'warning') +
+        statCard('bi-hash','Transacciones',items.length,'info');
+}
+
+// =============================================================
+// MONTHLY DATA
+// =============================================================
+function getMonthly() {
+    const m = MESES.map(()=>({ib:0,imp:0,ef:0,ev:0,ded:0}));
+    DB.ingresos.forEach(i=>{ const mo=new Date(i.fecha).getMonth(); m[mo].ib+=i.bruto; m[mo].imp+=i.impuestos; });
+    DB.egresos.forEach(e=>{ const mo=new Date(e.fecha).getMonth(); if(e.tipo==='Fijo')m[mo].ef+=e.monto;else m[mo].ev+=e.monto; if(e.deducible==='Sí')m[mo].ded+=e.monto; });
+    let ac=0;
+    return m.map(x=>{ const nt=x.ib-x.imp, eg=x.ef+x.ev, bl=nt-eg; ac+=bl; return {...x,nt,eg,bl,ac,ta:nt?bl/nt:0}; });
+}
+
+function renderResumen() {
+    const m = getMonthly();
+    document.getElementById('resumenTable').innerHTML = m.map((x,i)=>{
+        const st = x.bl>0?badge('Superávit','success'):x.bl<0?badge('Déficit','danger'):badge('Neutro','secondary');
+        return `<tr><td class="fw-semibold">${MESES[i]}</td>
+            <td class="text-end">${fmt(x.ib)}</td><td class="text-end text-muted">${fmt(x.imp)}</td><td class="text-end text-income">${fmt(x.nt)}</td>
+            <td class="text-end">${fmt(x.ef)}</td><td class="text-end">${fmt(x.ev)}</td><td class="text-end text-expense">${fmt(x.eg)}</td>
+            <td class="text-end fw-bold" style="color:${x.bl>=0?'#2e7d32':'#c62828'}">${fmt(x.bl)}</td>
+            <td class="text-end">${fmtP(x.ta)}</td><td class="text-end">${fmt(x.ac)}</td><td>${st}</td></tr>`;
+    }).join('');
+    const ti=m.reduce((s,x)=>s+x.nt,0), te=m.reduce((s,x)=>s+x.eg,0), bl=ti-te;
+    document.getElementById('resumenStats').innerHTML =
+        statCard('bi-arrow-down-circle','Ingresos Netos',fmt(ti),'success') +
+        statCard('bi-arrow-up-circle','Total Egresos',fmt(te),'danger') +
+        statCard('bi-wallet2','Balance Anual',fmt(bl),bl>=0?'success':'danger') +
+        statCard('bi-percent','Tasa Ahorro',fmtP(ti?bl/ti:0),'info');
+}
+
+// =============================================================
+// CATEGORÍAS ANÁLISIS
+// =============================================================
+function renderCatAnalisis() {
+    const total = DB.egresos.reduce((s,e)=>s+e.monto,0);
+    const cats = {};
+    DB.egresos.forEach(e=>{ if(!cats[e.categoria])cats[e.categoria]={t:0,n:0}; cats[e.categoria].t+=e.monto; cats[e.categoria].n++; });
+    const sorted = Object.entries(cats).sort((a,b)=>b[1].t-a[1].t);
+    document.getElementById('catAnalisisTable').innerHTML = sorted.map(([c,d])=>{
+        const cat=getCatEgreso(c); const p=total?d.t/total:0;
+        const niv=p>=.2?badge('Alto','danger'):p>=.1?badge('Medio','warning'):badge('Bajo','success');
+        return `<tr><td>${catTag(cat)}</td><td class="text-end currency">${fmt(d.t)}</td><td class="text-end">${fmtP(p)}</td><td class="text-center">${d.n}</td><td class="text-end">${fmt(d.t/d.n)}</td><td>${niv}</td></tr>`;
+    }).join('');
+
+    const mets={};
+    DB.egresos.forEach(e=>{ mets[e.metodo]=(mets[e.metodo]||0)+e.monto; });
+    document.getElementById('metodoAnalisisTable').innerHTML = Object.entries(mets).sort((a,b)=>b[1]-a[1]).map(([m,t])=>
+        `<tr><td>${m}</td><td class="text-end currency">${fmt(t)}</td><td class="text-end">${fmtP(total?t/total:0)}</td></tr>`
+    ).join('');
+
+    // Chart
+    if(charts.catPie) charts.catPie.destroy();
+    charts.catPie = new Chart(document.getElementById('chartCatPie'),{
+        type:'doughnut', options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}},
+        data:{labels:sorted.map(c=>c[0]),datasets:[{data:sorted.map(c=>c[1].t),backgroundColor:sorted.map(c=>getCatEgreso(c[0]).color)}]}
+    });
+}
+
+// =============================================================
+// PRESUPUESTO
+// =============================================================
+function renderPresupuesto() {
+    const ms = new Set(); DB.egresos.forEach(e=>ms.add(new Date(e.fecha).getMonth()));
+    const nm = Math.max(ms.size,1);
+    const gr={}; DB.egresos.forEach(e=>{ gr[e.categoria]=(gr[e.categoria]||0)+e.monto; });
+    let tp=0,tr_=0,ok=0,cu=0,ex=0;
+    const cats = DB.categoriasEgreso.filter(c=>DB.presupuestos[c.nombre]>0||(gr[c.nombre]||0)>0);
+
+    document.getElementById('presupuestoTable').innerHTML = cats.map(c=>{
+        const p=DB.presupuestos[c.nombre]||0, r=(gr[c.nombre]||0)/nm, d=p-r, pc=p?r/p:0;
+        tp+=p; tr_+=r;
+        const st=pc<=.8?(ok++,badge('OK','success')):pc<=1?(cu++,badge('Cuidado','warning')):(ex++,badge('Excedido','danger'));
+        return `<tr><td>${catTag(c)}</td>
+            <td class="text-end currency" style="cursor:pointer" onclick="editPres(this,'${c.nombre}')">${fmt(p)}</td>
+            <td class="text-end">${fmt(r)}</td>
+            <td class="text-end" style="color:${d>=0?'#2e7d32':'#c62828'}">${fmt(d)}</td>
+            <td class="text-end">${fmtP(pc)}</td><td>${st}</td></tr>`;
+    }).join('');
+
+    document.getElementById('presupuestoStats').innerHTML =
+        statCard('bi-bullseye','Presupuesto Total',fmt(tp),'primary') +
+        statCard('bi-receipt','Gasto Real',fmt(tr_),'danger') +
+        statCard('bi-check-circle','OK',ok,'success') +
+        statCard('bi-exclamation-circle','Excedido',ex,'danger');
+
+    // Chart
+    if(charts.pres) charts.pres.destroy();
+    charts.pres = new Chart(document.getElementById('chartPresupuesto'),{
+        type:'bar', options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'top'}}},
+        data:{labels:cats.map(c=>c.nombre),datasets:[
+            {label:'Presupuesto',data:cats.map(c=>DB.presupuestos[c.nombre]||0),backgroundColor:'rgba(46,125,50,0.7)'},
+            {label:'Real',data:cats.map(c=>(gr[c.nombre]||0)/nm),backgroundColor:'rgba(198,40,40,0.7)'}
+        ]}
+    });
+}
+function editPres(td, cat) {
+    const v = DB.presupuestos[cat]||0;
+    td.innerHTML = `<input type="number" class="form-control form-control-sm" value="${v}" style="width:120px" onblur="savePres(this,'${cat}')" onkeydown="if(event.key==='Enter')this.blur()">`;
+    td.querySelector('input').focus();
+}
+function savePres(el, cat) { DB.presupuestos[cat]=parseFloat(el.value)||0; save(); refreshAll(); toast('Presupuesto actualizado','success'); }
+
+// =============================================================
+// METAS
+// =============================================================
+function resetMetaForm() {
+    document.getElementById('metaEditId').value='';
+    document.getElementById('modalMetaTitle').textContent='Nueva Meta';
+    ['metaNombre'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('metaObjetivo').value='';
+    document.getElementById('metaAhorrado').value='0';
+    document.getElementById('metaFecha').value='';
+}
+function editMeta(id) {
+    const m=DB.metas.find(x=>x.id===id); if(!m) return;
+    document.getElementById('metaEditId').value=id;
+    document.getElementById('modalMetaTitle').textContent='Editar Meta';
+    document.getElementById('metaNombre').value=m.nombre;
+    document.getElementById('metaObjetivo').value=m.objetivo;
+    document.getElementById('metaAhorrado').value=m.ahorrado;
+    document.getElementById('metaFecha').value=m.fecha||'';
+    document.getElementById('metaPrioridad').value=m.prioridad;
+    new bootstrap.Modal(document.getElementById('modalMeta')).show();
+}
+function saveMeta() {
+    const nombre=document.getElementById('metaNombre').value;
+    const objetivo=parseFloat(document.getElementById('metaObjetivo').value);
+    if(!nombre||isNaN(objetivo)||objetivo<=0){toast('Completa los campos','warning');return;}
+    const obj={
+        id:parseInt(document.getElementById('metaEditId').value)||nextId(),
+        nombre, objetivo,
+        ahorrado:parseFloat(document.getElementById('metaAhorrado').value)||0,
+        fecha:document.getElementById('metaFecha').value,
+        prioridad:document.getElementById('metaPrioridad').value
+    };
+    const idx=DB.metas.findIndex(m=>m.id===obj.id);
+    if(idx>=0)DB.metas[idx]=obj;else DB.metas.push(obj);
+    save();closeModal('modalMeta');refreshAll();toast('✅ Meta guardada','success');
+}
+function deleteMeta(id){if(!confirm('¿Eliminar?'))return;DB.metas=DB.metas.filter(m=>m.id!==id);save();refreshAll();}
+
+function renderMetas() {
+    const list=document.getElementById('metasList');
+    if(!DB.metas.length){list.innerHTML='<div class="col-12 empty-state"><i class="bi bi-trophy"></i><p>Sin metas financieras</p></div>';
+        document.getElementById('metasStats').innerHTML=''; return;}
+
+    list.innerHTML = DB.metas.map(m=>{
+        const p=m.objetivo?m.ahorrado/m.objetivo:0;
+        const color=p>=1?'success':p>=.5?'primary':'warning';
+        const estado=p>=1?'🏆 Completada':p>=.5?'🔵 En camino':'🟠 Atrasada';
+        const hoy=new Date(),lim=new Date(m.fecha||'2026-12-31');
+        const mr=Math.max(1,(lim.getFullYear()-hoy.getFullYear())*12+lim.getMonth()-hoy.getMonth());
+        const falt=Math.max(0,m.objetivo-m.ahorrado);
+        const prio=m.prioridad==='Alta'?'danger':m.prioridad==='Media'?'warning':'info';
+        return `<div class="col-lg-6"><div class="card table-card"><div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div><h6 class="fw-bold mb-1">${m.nombre}</h6>${badge(m.prioridad,prio)} <small class="text-muted ms-2">${estado}</small></div>
+                <div class="btn-group btn-group-sm"><button class="btn btn-outline-primary btn-sm" onclick="editMeta(${m.id})"><i class="bi bi-pencil"></i></button><button class="btn btn-outline-danger btn-sm" onclick="deleteMeta(${m.id})"><i class="bi bi-trash"></i></button></div>
+            </div>
+            <div class="progress mb-2" style="height:22px"><div class="progress-bar bg-${color}" style="width:${Math.min(p*100,100)}%">${fmtP(p)}</div></div>
+            <div class="row text-center small">
+                <div class="col"><div class="text-muted">Objetivo</div><div class="fw-bold">${fmt(m.objetivo)}</div></div>
+                <div class="col"><div class="text-muted">Ahorrado</div><div class="fw-bold text-success">${fmt(m.ahorrado)}</div></div>
+                <div class="col"><div class="text-muted">Faltante</div><div class="fw-bold text-danger">${fmt(falt)}</div></div>
+                <div class="col"><div class="text-muted">Mensual nec.</div><div class="fw-bold">${fmt(falt/mr)}</div></div>
+            </div>
+        </div></div></div>`;
+    }).join('');
+
+    const to=DB.metas.reduce((s,m)=>s+m.objetivo,0), ta=DB.metas.reduce((s,m)=>s+m.ahorrado,0);
+    document.getElementById('metasStats').innerHTML =
+        statCard('bi-bullseye','Total Objetivo',fmt(to),'primary') +
+        statCard('bi-piggy-bank','Ahorrado',fmt(ta),'success') +
+        statCard('bi-percent','Completado',fmtP(to?ta/to:0),'info') +
+        statCard('bi-trophy','Completadas',DB.metas.filter(m=>m.ahorrado>=m.objetivo).length,'warning');
+}
+
+// =============================================================
+// DEUDAS
+// =============================================================
+function resetDeudaForm() {
+    document.getElementById('deudaEditId').value='';
+    document.getElementById('modalDeudaTitle').textContent='Nueva Deuda';
+    ['deudaAcreedor','deudaSaldo','deudaTasa','deudaPago'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('deudaPlazo').value='12';
+}
+function editDeuda(id) {
+    const d=DB.deudas.find(x=>x.id===id); if(!d)return;
+    document.getElementById('deudaEditId').value=id;
+    document.getElementById('modalDeudaTitle').textContent='Editar Deuda';
+    document.getElementById('deudaAcreedor').value=d.acreedor;
+    document.getElementById('deudaTipo').value=d.tipo;
+    document.getElementById('deudaSaldo').value=d.saldo;
+    document.getElementById('deudaTasa').value=(d.tasa*100);
+    document.getElementById('deudaPago').value=d.pago;
+    document.getElementById('deudaPlazo').value=d.plazo;
+    new bootstrap.Modal(document.getElementById('modalDeuda')).show();
+}
+function saveDeuda() {
+    const acreedor=document.getElementById('deudaAcreedor').value;
+    const saldo=parseFloat(document.getElementById('deudaSaldo').value);
+    if(!acreedor||isNaN(saldo)||saldo<=0){toast('Completa los campos','warning');return;}
+    const obj={
+        id:parseInt(document.getElementById('deudaEditId').value)||nextId(),
+        acreedor, tipo:document.getElementById('deudaTipo').value, saldo,
+        tasa:(parseFloat(document.getElementById('deudaTasa').value)||0)/100,
+        pago:parseFloat(document.getElementById('deudaPago').value)||0,
+        plazo:parseInt(document.getElementById('deudaPlazo').value)||12
+    };
+    const idx=DB.deudas.findIndex(d=>d.id===obj.id);
+    if(idx>=0)DB.deudas[idx]=obj;else DB.deudas.push(obj);
+    save();closeModal('modalDeuda');refreshAll();toast('✅ Deuda guardada','success');
+}
+function deleteDeuda(id){if(!confirm('¿Eliminar?'))return;DB.deudas=DB.deudas.filter(d=>d.id!==id);save();refreshAll();}
+
+function renderDeudas() {
+    const tb=document.getElementById('deudasTable');
+    if(!DB.deudas.length){tb.innerHTML=`<tr><td colspan="10" class="empty-state"><i class="bi bi-inbox"></i><p>Sin deudas</p></td></tr>`;
+        document.getElementById('deudasStats').innerHTML='';return;}
+    tb.innerHTML = DB.deudas.map(d=>{
+        const tp=d.pago*d.plazo,int=tp-d.saldo;
+        const pr=d.tasa>=.3?badge('Urgente','danger'):d.tasa>=.2?badge('Moderada','warning'):badge('Baja','success');
+        return `<tr><td class="fw-semibold">${d.acreedor}</td><td><small>${d.tipo}</small></td>
+            <td class="text-end currency">${fmt(d.saldo)}</td><td class="text-end">${fmtP(d.tasa)}</td>
+            <td class="text-end currency">${fmt(d.pago)}</td><td class="text-center">${d.plazo}m</td>
+            <td class="text-end">${fmt(tp)}</td><td class="text-end text-expense">${fmt(int)}</td><td>${pr}</td>
+            <td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary btn-sm" onclick="editDeuda(${d.id})"><i class="bi bi-pencil"></i></button><button class="btn btn-outline-danger btn-sm" onclick="deleteDeuda(${d.id})"><i class="bi bi-trash"></i></button></div></td></tr>`;
+    }).join('');
+    const ts=DB.deudas.reduce((s,d)=>s+d.saldo,0), tp=DB.deudas.reduce((s,d)=>s+d.pago,0);
+    const ingM=DB.ingresos.reduce((s,i)=>s+i.bruto-i.impuestos,0)/12;
+    const ratio=ingM?tp/ingM:0;
+    document.getElementById('deudasStats').innerHTML =
+        statCard('bi-exclamation-triangle','Deuda Total',fmt(ts),'danger') +
+        statCard('bi-calendar-month','Pago Mensual',fmt(tp),'warning') +
+        statCard('bi-percent','Ratio Deuda/Ingreso',fmtP(ratio),ratio<=.3?'success':'danger') +
+        statCard('bi-heart-pulse','Estado',ratio<=.3?'Saludable':ratio<=.5?'Precaución':'Peligro',ratio<=.3?'success':'danger');
+}
+
+// =============================================================
+// CONFIG CATEGORÍAS
+// =============================================================
+function resetCategoriaForm() {
+    document.getElementById('catEditId').value='';
+    document.getElementById('modalCategoriaTitle').textContent='Nueva Categoría';
+    document.getElementById('catNombre').value='';
+    document.getElementById('catIcono').value='bi-tag';
+    document.getElementById('catColor').value='#0d47a1';
+    renderColorGrid();
+}
+function renderColorGrid() {
+    const sel=document.getElementById('catColor').value;
+    document.getElementById('colorGrid').innerHTML = COLORS.map(c=>
+        `<div class="color-swatch ${c===sel?'active':''}" style="background:${c}" onclick="document.getElementById('catColor').value='${c}';renderColorGrid()"></div>`
+    ).join('');
+}
+function editCategoria(id, tipo) {
+    const list = tipo==='ingreso'?DB.categoriasIngreso:DB.categoriasEgreso;
+    const cat = list.find(c=>c.id===id); if(!cat)return;
+    document.getElementById('catEditId').value=id;
+    document.getElementById('catTipo').value=tipo;
+    document.getElementById('catNombre').value=cat.nombre;
+    document.getElementById('catIcono').value=cat.icono;
+    document.getElementById('catColor').value=cat.color;
+    document.getElementById('modalCategoriaTitle').textContent='Editar Categoría';
+    renderColorGrid();
+    new bootstrap.Modal(document.getElementById('modalCategoria')).show();
+}
+function saveCategoria() {
+    const nombre=document.getElementById('catNombre').value.trim();
+    if(!nombre){toast('Nombre requerido','warning');return;}
+    const tipo=document.getElementById('catTipo').value;
+    const list=tipo==='ingreso'?DB.categoriasIngreso:DB.categoriasEgreso;
+    const obj={
+        id:parseInt(document.getElementById('catEditId').value)||nextId(),
+        nombre, color:document.getElementById('catColor').value,
+        icono:document.getElementById('catIcono').value||'bi-tag'
+    };
+    const idx=list.findIndex(c=>c.id===obj.id);
+    if(idx>=0)list[idx]=obj;else list.push(obj);
+    if(tipo==='egreso') initPresupuestos();
+    save();closeModal('modalCategoria');refreshAll();toast('✅ Categoría guardada','success');
+}
+function deleteCategoria(id, tipo) {
+    if(!confirm('¿Eliminar esta categoría?'))return;
+    if(tipo==='ingreso')DB.categoriasIngreso=DB.categoriasIngreso.filter(c=>c.id!==id);
+    else DB.categoriasEgreso=DB.categoriasEgreso.filter(c=>c.id!==id);
+    save();refreshAll();toast('Categoría eliminada','danger');
+}
+
+function renderConfigCategorias() {
+    document.getElementById('catIngresosTable').innerHTML = DB.categoriasIngreso.map(c=>
+        `<tr><td><span class="cat-dot" style="background:${c.color};width:16px;height:16px"></span></td>
+        <td class="fw-semibold">${c.nombre}</td><td><i class="bi ${c.icono}"></i> <small class="text-muted">${c.icono}</small></td>
+        <td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary btn-sm" onclick="editCategoria(${c.id},'ingreso')"><i class="bi bi-pencil"></i></button><button class="btn btn-outline-danger btn-sm" onclick="deleteCategoria(${c.id},'ingreso')"><i class="bi bi-trash"></i></button></div></td></tr>`
+    ).join('');
+    document.getElementById('catEgresosTable').innerHTML = DB.categoriasEgreso.map(c=>
+        `<tr><td><span class="cat-dot" style="background:${c.color};width:16px;height:16px"></span></td>
+        <td class="fw-semibold">${c.nombre}</td><td><i class="bi ${c.icono}"></i> <small class="text-muted">${c.icono}</small></td>
+        <td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary btn-sm" onclick="editCategoria(${c.id},'egreso')"><i class="bi bi-pencil"></i></button><button class="btn btn-outline-danger btn-sm" onclick="deleteCategoria(${c.id},'egreso')"><i class="bi bi-trash"></i></button></div></td></tr>`
+    ).join('');
+}
+
+// =============================================================
+// CONFIG MÉTODOS
+// =============================================================
+function resetMetodoForm() {
+    document.getElementById('metodoEditId').value='';
+    document.getElementById('modalMetodoTitle').textContent='Nuevo Método';
+    document.getElementById('metodoNombre').value='';
+    document.getElementById('metodoIcono').value='bi-wallet2';
+}
+function editMetodo(id) {
+    const m=DB.metodosPago.find(x=>x.id===id); if(!m)return;
+    document.getElementById('metodoEditId').value=id;
+    document.getElementById('modalMetodoTitle').textContent='Editar Método';
+    document.getElementById('metodoNombre').value=m.nombre;
+    document.getElementById('metodoIcono').value=m.icono;
+    new bootstrap.Modal(document.getElementById('modalMetodo')).show();
+}
+function saveMetodo() {
+    const nombre=document.getElementById('metodoNombre').value.trim();
+    if(!nombre){toast('Nombre requerido','warning');return;}
+    const obj={id:parseInt(document.getElementById('metodoEditId').value)||nextId(),nombre,icono:document.getElementById('metodoIcono').value||'bi-wallet2'};
+    const idx=DB.metodosPago.findIndex(m=>m.id===obj.id);
+    if(idx>=0)DB.metodosPago[idx]=obj;else DB.metodosPago.push(obj);
+    save();closeModal('modalMetodo');refreshAll();toast('✅ Método guardado','success');
+}
+function deleteMetodo(id){if(!confirm('¿Eliminar?'))return;DB.metodosPago=DB.metodosPago.filter(m=>m.id!==id);save();refreshAll();}
+
+function renderConfigMetodos() {
+    document.getElementById('metodosTable').innerHTML = DB.metodosPago.map(m=>
+        `<tr><td><i class="bi ${m.icono} fs-5"></i></td><td class="fw-semibold">${m.nombre}</td>
+        <td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary btn-sm" onclick="editMetodo(${m.id})"><i class="bi bi-pencil"></i></button><button class="btn btn-outline-danger btn-sm" onclick="deleteMetodo(${m.id})"><i class="bi bi-trash"></i></button></div></td></tr>`
+    ).join('');
+}
+
+// =============================================================
+// DASHBOARD
+// =============================================================
+function renderDashboard() {
+    destroyCharts();
+    const m=getMonthly(), ml=MESES.map(x=>x.substring(0,3));
+    const ti=m.reduce((s,x)=>s+x.nt,0), te=m.reduce((s,x)=>s+x.eg,0), bl=ti-te;
+
+    document.getElementById('dashStats').innerHTML =
+        statCard('bi-arrow-down-circle','Ingresos Netos',fmt(ti),'success') +
+        statCard('bi-arrow-up-circle','Total Egresos',fmt(te),'danger') +
+        statCard('bi-wallet2','Balance',fmt(bl),bl>=0?'success':'danger') +
+        statCard('bi-graph-up-arrow','Ahorro Acumulado',fmt(m[11].ac),'primary');
+
+    const opts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12}}}};
+
+    charts.line = new Chart(document.getElementById('chartLine'),{
+        type:'line',options:opts,
+        data:{labels:ml,datasets:[
+            {label:'Ingresos',data:m.map(x=>x.nt),borderColor:'#2e7d32',backgroundColor:'rgba(46,125,50,.1)',fill:true,tension:.3},
+            {label:'Egresos',data:m.map(x=>x.eg),borderColor:'#c62828',backgroundColor:'rgba(198,40,40,.1)',fill:true,tension:.3}
+        ]}
+    });
+
+    const cats={}; DB.egresos.forEach(e=>{cats[e.categoria]=(cats[e.categoria]||0)+e.monto;});
+    const sc=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+    charts.pie = new Chart(document.getElementById('chartPie'),{
+        type:'doughnut',options:{...opts,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}}},
+        data:{labels:sc.map(c=>c[0]),datasets:[{data:sc.map(c=>c[1]),backgroundColor:sc.map(c=>getCatEgreso(c[0]).color)}]}
+    });
+
+    charts.bar = new Chart(document.getElementById('chartBar'),{
+        type:'bar',options:opts,
+        data:{labels:ml,datasets:[{label:'Balance',data:m.map(x=>x.bl),backgroundColor:m.map(x=>x.bl>=0?'rgba(46,125,50,.7)':'rgba(198,40,40,.7)')}]}
+    });
+
+    charts.area = new Chart(document.getElementById('chartArea'),{
+        type:'line',options:opts,
+        data:{labels:ml,datasets:[{label:'Acumulado',data:m.map(x=>x.ac),borderColor:'#1565c0',backgroundColor:'rgba(21,101,192,.15)',fill:true,tension:.3}]}
+    });
+
+    // Last transactions
+    const li=DB.ingresos.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,5);
+    document.getElementById('dashLastIngresos').innerHTML = li.length ? li.map(i=>`<tr><td>${i.fecha}</td><td>${i.categoria}</td><td>${i.descripcion}</td><td class="text-end currency text-income">${fmt(i.bruto-i.impuestos)}</td></tr>`).join('') : '<tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>';
+    const le=DB.egresos.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,5);
+    document.getElementById('dashLastEgresos').innerHTML = le.length ? le.map(e=>`<tr><td>${e.fecha}</td><td>${e.categoria}</td><td>${e.descripcion}</td><td class="text-end currency text-expense">${fmt(e.monto)}</td></tr>`).join('') : '<tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>';
+}
+
+// =============================================================
+// EXPORT / IMPORT
+// =============================================================
+function exportData() {
+    const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='finanzapp_backup_'+new Date().toISOString().split('T')[0]+'.json'; a.click();
+    toast('📥 Datos exportados','success');
+}
+function handleImport(e) {
+    const f=e.target.files[0]; if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{try{DB=JSON.parse(ev.target.result);save();refreshAll();toast('📤 Importado correctamente','success');}catch{toast('Archivo inválido','danger');}};
+    r.readAsText(f); e.target.value='';
+}
+function exportCSV() {
+    let csv='Tipo,Fecha,Categoría,Descripción,Monto\n';
+    DB.ingresos.forEach(i=>csv+=`Ingreso,${i.fecha},${i.categoria},"${i.descripcion}",${i.bruto-i.impuestos}\n`);
+    DB.egresos.forEach(e=>csv+=`Egreso,${e.fecha},${e.categoria},"${e.descripcion}",${e.monto}\n`);
+    const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='finanzas_'+new Date().toISOString().split('T')[0]+'.csv'; a.click();
+    toast('📥 CSV exportado','success');
+}
+function clearAll() {
+    if(!confirm('⚠️ ¿Borrar TODOS los datos?'))return;
+    DB.ingresos=[];DB.egresos=[];DB.metas=[];DB.deudas=[];DB.presupuestos={};
+    initPresupuestos();save();refreshAll();toast('Datos eliminados','danger');
+}
+function saveCurrency() { DB.currency=document.getElementById('configMoneda').value; save(); refreshAll(); }
+
+// =============================================================
+// FILTER LISTENERS
+// =============================================================
+function addFilterListeners() {
+    ['filtIngDesde','filtIngHasta','filtIngCat','filtIngBuscar'].forEach(id=>{
+        document.getElementById(id)?.addEventListener('input',renderIngresos);
+    });
+    ['filtEgDesde','filtEgHasta','filtEgCat','filtEgTipo','filtEgMetodo','filtEgBuscar'].forEach(id=>{
+        document.getElementById(id)?.addEventListener('input',renderEgresos);
+    });
+}
+
+// =============================================================
+// REFRESH
+// =============================================================
+function refreshAll() {
+    populateSelects();
+    renderIngresos(); renderEgresos(); renderResumen();
+    renderCatAnalisis(); renderPresupuesto();
+    renderMetas(); renderDeudas();
+    renderConfigCategorias(); renderConfigMetodos();
+    document.getElementById('configMoneda').value = DB.currency||'MXN';
+    const activePage = document.querySelector('.page.active')?.id;
+    if (activePage === 'page-dashboard') renderDashboard();
+}
+
+// =============================================================
+// INIT
+// =============================================================
+load();
+document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+refreshAll();
+addFilterListeners();
+
+// Render dashboard charts when navigating
+const origNav = navigateTo;
+window.navigateTo = function(page) {
+    origNav(page);
+    if (page === 'dashboard') setTimeout(renderDashboard, 50);
+};
+</script>
+</body>
+</html>
